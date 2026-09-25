@@ -1,14 +1,17 @@
-import { site } from "@/data/site";
 import { WhatsAppIcon } from "@/lib/icons";
+import { getCachedContent } from "@/lib/store/cache";
 
-export function FloatingCS() {
+export async function FloatingCS() {
+  const { content } = await getCachedContent();
+  const { whatsapp, name } = content.settings;
+
   return (
     <a
-      href={site.contact.whatsapp}
+      href={whatsapp}
       target="_blank"
       rel="noopener"
       className="cs-float"
-      aria-label={`Chat CS ${site.name} via WhatsApp`}
+      aria-label={`Chat CS ${name} via WhatsApp`}
     >
       <WhatsAppIcon />
       CS Online
