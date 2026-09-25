@@ -23,31 +23,39 @@ export default async function AdminLayout({
   const [{ content, error }, authEnabled] = [await getContentSnapshot(), isAuthEnabled()];
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div
+      className="min-h-screen bg-cream"
+      style={{
+        fontFamily:
+          'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      }}
+    >
       <div className="lg:flex">
         <AdminSidebar brandName={content.settings.name} authEnabled={authEnabled} />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 border-b-2 border-line bg-white/85 backdrop-blur-md">
             <div className="flex h-16 items-center gap-2 px-4 lg:px-8">
-              <div className="mr-auto">
+              <div className="mr-auto lg:hidden">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
                   Panel Admin
                 </p>
                 <p className="font-display text-sm font-extrabold">{content.settings.name}</p>
               </div>
 
-              <Link href="/" target="_blank" className="btn btn-ghost px-4 py-2 text-xs">
-                Lihat Situs ↗
-              </Link>
+              <div className="ml-auto flex items-center gap-2">
+                <Link href="/" target="_blank" className="btn btn-ghost px-4 py-2 text-xs">
+                  Lihat Situs ↗
+                </Link>
 
-              {authEnabled ? (
-                <form action={logoutAction}>
-                  <button type="submit" className="btn btn-ghost px-4 py-2 text-xs">
-                    Keluar
-                  </button>
-                </form>
-              ) : null}
+                {authEnabled ? (
+                  <form action={logoutAction}>
+                    <button type="submit" className="btn btn-ghost px-4 py-2 text-xs">
+                      Keluar
+                    </button>
+                  </form>
+                ) : null}
+              </div>
             </div>
           </header>
 

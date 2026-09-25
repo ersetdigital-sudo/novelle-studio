@@ -59,7 +59,7 @@ export default async function AdminOrdersPage({
               <div className="flex flex-wrap items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-display text-sm font-extrabold">{order.invoice}</span>
+                    <span className="text-sm font-bold tracking-tight">{order.invoice}</span>
                     <Badge tone={ORDER_STATUS_TONE[order.status]}>
                       {ORDER_STATUS_LABEL[order.status]}
                     </Badge>
@@ -80,7 +80,7 @@ export default async function AdminOrdersPage({
                   <p className="text-[11px] text-muted">
                     {rupiah(order.subtotal)} + admin {rupiah(order.fee)}
                   </p>
-                  <p className="font-display text-lg font-extrabold text-orange">
+                  <p className="text-lg font-extrabold text-orange">
                     {rupiah(order.total)}
                   </p>
                 </div>
