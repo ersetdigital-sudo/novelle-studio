@@ -4,10 +4,10 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 import { CatalogProvider } from "@/components/public/CategoryProvider";
+import { ContactProvider } from "@/components/public/ContactProvider";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { TransactionProvider } from "@/providers/TransactionProvider";
-import { getCachedCatalog } from "@/lib/store/cache";
-import { getCachedPaymentMethods } from "@/lib/store/cache";
+import { getCachedCatalog, getCachedContent, getCachedPaymentMethods } from "@/lib/store/cache";
 import { site } from "@/data/site";
 
 /* Font lokal dari public/fonts — tanpa request ke Google Fonts. */
@@ -84,56 +84,66 @@ export const viewport: Viewport = {
   themeColor: "#FFF6EC",
 };
 
-/** Structured data global: organisasi + situs. */
-const structuredData = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "Organization",
-      "@id": `${site.url}/#organization`,
-      name: site.name,
-      url: site.url,
-      description: site.description,
-      logo: `${site.url}/icon.svg`,
-      areaServed: "ID",
-      contactPoint: [
-        {
-          "@type": "ContactPoint",
-          contactType: "customer service",
-          telephone: site.contact.phoneDisplay,
-          email: site.contact.email,
-          availableLanguage: ["id"],
-        },
-      ],
-    },
-    {
-      "@type": "WebSite",
-      "@id": `${site.url}/#website`,
-      url: site.url,
-      name: site.name,
-      inLanguage: "id-ID",
-      description: site.description,
-      publisher: { "@id": `${site.url}/#organization` },
-    },
-  ],
-};
+/** Structured data global: organisasi + situs. Kontak dibaca dari admin (content.settings). */
+function buildStructuredData(contact: { phoneDisplay: string; email: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${site.url}/#organization`,
+        name: site.name,
+        url: site.url,
+        description: site.description,
+        logo: `${site.url}/icon.svg`,
+        areaServed: "ID",
+        contactPoint: [
+          {
+            "@type": "ContactPoint",
+            contactType: "customer service",
+            telephone: contact.phoneDisplay,
+            email: contact.email,
+            availableLanguage: ["id"],
+          },
+        ],
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${site.url}/#website`,
+        url: site.url,
+        name: site.name,
+        inLanguage: "id-ID",
+        description: site.description,
+        publisher: { "@id": `${site.url}/#organization` },
+      },
+    ],
+  };
+}
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Katalog & metode pembayaran dibaca server lalu diberikan ke komponen klien.
+  // Katalog, pembayaran & kontak dibaca server lalu diberikan ke komponen klien.
   // Cache ber-tag: dashboard memanggil updateTag() saat ada perubahan.
-  const [catalog, payments] = await Promise.all([getCachedCatalog(), getCachedPaymentMethods()]);
+  const [catalog, payments, snapshot] = await Promise.all([
+    getCachedCatalog(),
+    getCachedPaymentMethods(),
+    getCachedContent(),
+  ]);
   const categories = catalog.categories;
   const paymentMethods = payments.methods;
+  const { settings } = snapshot.content;
+  const contact = { whatsapp: settings.whatsapp, phoneDisplay: settings.phoneDisplay, email: settings.email };
 
   return (
     <html lang="id" className={`${fredoka.variable} ${baloo.variable}`}>
       <body>
-        <JsonLd data={structuredData} />
-        <CatalogProvider categories={categories} paymentMethods={paymentMethods}>
-          <TransactionProvider>{children}</TransactionProvider>
-        </CatalogProvider>
+        <JsonLd data={buildStructuredData({ phoneDisplay: settings.phoneDisplay, email: settings.email })} />
+        <ContactProvider contact={contact}>
+          <CatalogProvider categories={categories} paymentMethods={paymentMethods}>
+            <TransactionProvider>{children}</TransactionProvider>
+          </CatalogProvider>
+        </ContactProvider>
       </body>
     </html>
   );
