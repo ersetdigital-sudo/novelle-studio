@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+content/
+.env*
+!.env.example
+.DS_Store
+.codegraph/
+.omo/
+.needmcp/
