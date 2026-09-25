@@ -4,9 +4,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 import { CatalogProvider } from "@/components/public/CategoryProvider";
-import { Footer } from "@/components/layout/Footer";
-import { FloatingCS } from "@/components/layout/FloatingCS";
-import { Header } from "@/components/layout/Header";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { TransactionProvider } from "@/providers/TransactionProvider";
 import { getCachedCatalog } from "@/lib/store/cache";
@@ -135,12 +132,7 @@ export default async function RootLayout({
       <body>
         <JsonLd data={structuredData} />
         <CatalogProvider categories={categories} paymentMethods={paymentMethods}>
-          <TransactionProvider>
-            <Header />
-            {children}
-            <Footer />
-            <FloatingCS />
-          </TransactionProvider>
+          <TransactionProvider>{children}</TransactionProvider>
         </CatalogProvider>
       </body>
     </html>

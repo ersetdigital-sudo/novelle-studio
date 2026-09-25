@@ -1,10 +1,15 @@
 import Link from "next/link";
 
+import { FloatingCS } from "@/components/layout/FloatingCS";
+import { Footer } from "@/components/layout/Footer";
+import { Header } from "@/components/layout/Header";
 import { orderedCategories } from "@/lib/catalog";
 
 export default function NotFound() {
   return (
-    <main className="min-h-[70vh] pt-17.5 pb-22.5">
+    <>
+      <Header />
+      <main className="min-h-[70vh] pt-17.5 pb-22.5">
       <div className="wrap text-center">
         <p className="kicker">Error 404</p>
         <h1 className="mt-2 text-[34px] md:text-[44px]">Halaman tidak ditemukan</h1>
@@ -32,6 +37,9 @@ export default function NotFound() {
           ))}
         </ul>
       </div>
-    </main>
+      </main>
+      <Footer />
+      <FloatingCS />
+    </>
   );
 }
