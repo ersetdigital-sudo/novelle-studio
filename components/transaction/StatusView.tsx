@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { site } from "@/data/site";
 import { formatDateTime, rupiah } from "@/lib/format";
 import { SpinnerIcon, SuccessIcon } from "@/lib/icons";
 import { useTransaction } from "@/providers/TransactionProvider";
+import { useContact } from "@/components/public/ContactProvider";
 import { FlowSteps } from "@/components/ui/FlowSteps";
 
 /** Simulasi verifikasi pembayaran oleh sistem. */
@@ -16,6 +16,7 @@ const VERIFICATION_DELAY_MS = 3500;
 export function StatusView() {
   const router = useRouter();
   const { state, hydrated, category, label, finishPayment } = useTransaction();
+  const { whatsapp } = useContact();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -132,7 +133,7 @@ export function StatusView() {
         <p className="hint mt-4.5">
           Simpan kode transaksi ini sebagai bukti. Butuh bantuan?{" "}
           <a
-            href={site.contact.whatsapp}
+            href={whatsapp}
             target="_blank"
             rel="noopener"
             className="font-semibold text-tosca-dark"

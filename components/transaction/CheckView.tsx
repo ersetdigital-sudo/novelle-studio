@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { site } from "@/data/site";
 import { formatFullDateTime, formatTime, rupiah } from "@/lib/format";
 import { EmptyReceiptIcon, SearchIcon, TrackCheckIcon } from "@/lib/icons";
 import type { Order } from "@/lib/types";
+import { useContact } from "@/components/public/ContactProvider";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 
 interface TimelineStep {
@@ -62,6 +62,7 @@ const STATUS_BADGE: Record<Order["status"], { label: string; tone: string }> = {
 
 export function CheckView() {
   const searchParams = useSearchParams();
+  const { whatsapp } = useContact();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [result, setResult] = useState<Order | null>(null);
@@ -240,7 +241,7 @@ export function CheckView() {
                 Transaksi Lagi
               </Link>
               <a
-                href={site.contact.whatsapp}
+                href={whatsapp}
                 target="_blank"
                 rel="noopener"
                 className="btn btn-ghost"

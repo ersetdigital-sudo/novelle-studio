@@ -10,6 +10,7 @@ import { QR_TRANSFORM, optimizeCloudinaryUrl } from "@/lib/cloudinary";
 import { rupiah } from "@/lib/format";
 import { useTransaction } from "@/providers/TransactionProvider";
 import { useCatalog } from "@/components/public/CategoryProvider";
+import { useContact } from "@/components/public/ContactProvider";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { FlowSteps } from "@/components/ui/FlowSteps";
 
@@ -24,6 +25,7 @@ export function CheckoutView() {
   const router = useRouter();
   const { state, hydrated, category, label } = useTransaction();
   const { paymentMethods } = useCatalog();
+  const { whatsapp, phoneDisplay } = useContact();
   const [secondsLeft, setSecondsLeft] = useState(PAYMENT_WINDOW_SECONDS);
   const [loading, setLoading] = useState(true);
 
@@ -136,12 +138,12 @@ export function CheckoutView() {
           <p className="hint">
             Kendala pembayaran?{" "}
             <a
-              href={site.contact.whatsapp}
+              href={whatsapp}
               target="_blank"
               rel="noopener"
               className="font-semibold text-tosca-dark"
             >
-              Hubungi CS {site.contact.phoneDisplay}
+              Hubungi CS {phoneDisplay}
             </a>
           </p>
         </div>
