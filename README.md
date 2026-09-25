@@ -39,13 +39,14 @@ legacy/index.html        # HTML asli sebelum konversi (referensi)
 | Yang mau diubah | File |
 | --- | --- |
 | Harga, nominal, biaya admin, field form | `data/catalog.ts` |
-| Nama brand, nomor CS, email, URL situs | `data/site.ts` |
+| Nomor CS / WhatsApp, email, nama & tagline brand | admin → Konten Situs (`content.settings`, Supabase) |
+| URL situs, QRIS placeholder | `data/site.ts` |
 | FAQ, promo, testimoni | `data/faqs.ts`, `data/promos.ts`, `data/testimonials.ts` |
 | Warna & tipografi | token di `app/globals.css` (`@theme`) |
 
 ## Yang masih perlu diisi manual
 
 - **QRIS asli**: ganti `public/qris-placeholder.svg` dengan QRIS milik Anda, lalu update `site.qrisImage` di `data/site.ts` (disarankan PNG/JPG ≥ 500×500).
-- **Nomor CS / WhatsApp & email**: masih memakai contoh `0812-3456-7890` dan `halo@novellestudio.id`.
+- **Nomor CS / WhatsApp & email**: ubah lewat admin → Konten Situs → Identitas & Kontak. Berlaku otomatis di footer, tombol CS melayang, link checkout/cek-transaksi, dan JSON-LD.
 - **URL produksi**: set `NEXT_PUBLIC_SITE_URL` (dipakai untuk canonical, OG, sitemap, JSON-LD). Default `https://novellestudio.id`.
 - **Backend**: alur transaksi masih simulasi di sisi klien (tanpa server). Riwayat disimpan di `localStorage`; ganti `lib/history.ts` (`findTransaction`) dengan panggilan API bila backend sudah tersedia. Pembayaran QRIS masih placeholder statis.
