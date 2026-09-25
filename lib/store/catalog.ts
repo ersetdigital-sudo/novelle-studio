@@ -2,10 +2,14 @@ import { catalog as codeCatalog, categoryOrder } from "@/data/catalog";
 import { isSupabaseConfigured, supabaseFetch } from "@/lib/store/config";
 import { CONTENT_FILES, readJsonFile, writeJsonFile } from "@/lib/store/files";
 import { defaultCategoryItems, defaultCategorySettings } from "@/lib/store/defaults";
+import { getContentSnapshot, saveSiteContent } from "@/lib/store/content";
 import type {
+  CategoryField,
   CategoryItemRecord,
   CategorySetting,
   CategorySlug,
+  CustomCategory,
+  CustomCategoryItem,
   NominalItem,
   ResolvedCategory,
 } from "@/lib/types";
@@ -24,11 +28,13 @@ export interface CatalogSnapshot {
 
 /** Ringkasan untuk daftar kategori di dashboard. */
 export interface CategoryOverview {
-  slug: CategorySlug;
+  slug: string;
   name: string;
   short: string;
+  icon: string;
   adminFee: number;
   isActive: boolean;
+  isCustom: boolean;
   itemCount: number;
   activeItemCount: number;
   startingPrice: number;
@@ -131,6 +137,70 @@ const toNominal = (item: CategoryItemRecord): NominalItem => ({
 const byOrder = (a: CategoryItemRecord, b: CategoryItemRecord) =>
   a.sortOrder - b.sortOrder;
 
+/* ------------------------------------------------------------------ */
+/* Kategori custom (dibuat dari dashboard, disimpan di site_content)   */
+/* ------------------------------------------------------------------ */
+
+export const DEFAULT_CUSTOM_TINT = "#D8F5F0";
+export const DEFAULT_CUSTOM_ICON = "box";
+
+export async function getCustomCategories(): Promise<CustomCategory[]> {
+  const { content } = await getContentSnapshot();
+  return content.customCategories ?? [];
+}
+
+export function customSetting(def: CustomCategory): CategorySetting {
+  return {
+    slug: def.slug,
+    adminFee: def.admin,
+    nomLabel: def.nomLabel,
+    providerLabel: null,
+    providers: null,
+    fieldLabel: def.field.label,
+    fieldPlaceholder: def.field.placeholder,
+    fieldHint: def.field.hint,
+    fieldMinLength: def.field.minLength,
+    altProvider: null,
+    isActive: def.isActive,
+  };
+}
+
+function customItemRecords(def: CustomCategory): CategoryItemRecord[] {
+  return def.items.map((item, index) => ({
+    id: `${def.slug}-custom-${index}`,
+    categorySlug: def.slug,
+    variant: "main" as const,
+    label: item.label,
+    note: item.note,
+    price: item.price,
+    sortOrder: index,
+    isActive: item.isActive,
+  }));
+}
+
+function resolveCustom(
+  def: CustomCategory,
+  includeInactiveItems: boolean,
+): ResolvedCategory {
+  const setting = customSetting(def);
+  const items = customItemRecords(def)
+    .filter((item) => includeInactiveItems || item.isActive)
+    .sort(byOrder);
+  return {
+    slug: def.slug,
+    name: def.name,
+    short: def.short,
+    tint: def.tint,
+    icon: def.icon,
+    admin: def.admin,
+    nomLabel: def.nomLabel,
+    field: def.field,
+    items: items.map(toNominal),
+    isActive: def.isActive,
+    settings: setting,
+  };
+}
+
 /**
  * Gabungkan default dari kode dengan override dashboard.
  * `includeInactiveItems` dipakai dashboard; halaman publik selalu false.
@@ -142,11 +212,12 @@ export async function getCatalogSnapshot(
 
   try {
     const raw = await loadRaw();
+    const customDefs = await getCustomCategories();
     const settingBySlug = new Map(raw.settings.map((item) => [item.slug, item]));
     const defaults = defaultCategorySettings();
     const defaultItems = defaultCategoryItems();
 
-    const categories = categoryOrder
+    const codeCategories = categoryOrder
       .map((slug) => {
         const base = codeCatalog[slug];
         const setting = settingBySlug.get(slug) ?? defaults.find((s) => s.slug === slug)!;
@@ -191,11 +262,16 @@ export async function getCatalogSnapshot(
       })
       .filter((category) => includeInactiveCategories || category.isActive);
 
+    const categories = [
+      ...codeCategories,
+      ...customDefs.map((def) => resolveCustom(def, includeInactiveItems)),
+    ].filter((category) => includeInactiveCategories || category.isActive);
+
     return { categories, error: null };
   } catch (error) {
     // Kalau Supabase bermasalah, situs tetap tampil memakai default dari kode.
     const fallback: ResolvedCategory[] = defaultCategorySettings().map((setting) => {
-      const base = codeCatalog[setting.slug];
+      const base = codeCatalog[setting.slug as CategorySlug];
       const items = defaultCategoryItems()
         .filter((item) => item.categorySlug === setting.slug && item.variant === "main")
         .sort(byOrder);
@@ -227,25 +303,30 @@ export async function getActiveCategories(): Promise<ResolvedCategory[]> {
 export async function getCategoryBySlug(
   slug: string,
 ): Promise<ResolvedCategory | undefined> {
-  if (!isCategorySlug(slug)) return undefined;
   const { categories } = await getCatalogSnapshot();
   return categories.find((category) => category.slug === slug);
 }
 
 /** Data mentah untuk editor dashboard (termasuk nominal yang disembunyikan). */
 export async function getCategoryForEdit(
-  slug: CategorySlug,
+  slug: string,
 ): Promise<{ setting: CategorySetting; items: CategoryItemRecord[] }> {
-  const raw = await loadRaw();
-  const fallbackSetting =
-    defaultCategorySettings().find((item) => item.slug === slug) ??
-    defaultCategorySettings()[0]!;
-  const setting = raw.settings.find((item) => item.slug === slug) ?? fallbackSetting;
-  const stored = raw.items.filter((item) => item.categorySlug === slug);
-  const items = stored.length
-    ? stored
-    : defaultCategoryItems().filter((item) => item.categorySlug === slug);
-  return { setting, items: [...items].sort(byOrder) };
+  if (isCategorySlug(slug)) {
+    const raw = await loadRaw();
+    const fallbackSetting =
+      defaultCategorySettings().find((item) => item.slug === slug) ??
+      defaultCategorySettings()[0]!;
+    const setting = raw.settings.find((item) => item.slug === slug) ?? fallbackSetting;
+    const stored = raw.items.filter((item) => item.categorySlug === slug);
+    const items = stored.length
+      ? stored
+      : defaultCategoryItems().filter((item) => item.categorySlug === slug);
+    return { setting, items: [...items].sort(byOrder) };
+  }
+
+  const custom = (await getCustomCategories()).find((item) => item.slug === slug);
+  if (!custom) throw new Error("Kategori tidak ditemukan.");
+  return { setting: customSetting(custom), items: customItemRecords(custom) };
 }
 
 /** Ringkasan semua kategori untuk halaman daftar di dashboard. */
@@ -255,11 +336,12 @@ export async function getCategoryOverview(): Promise<{
 }> {
   try {
     const raw = await loadRaw();
+    const customDefs = await getCustomCategories();
     const settingsBySlug = new Map(raw.settings.map((item) => [item.slug, item]));
     const defaults = defaultCategorySettings();
     const defaultItems = defaultCategoryItems();
 
-    const overview = categoryOrder.map((slug) => {
+    const codeOverview = categoryOrder.map((slug) => {
       const base = codeCatalog[slug];
       const setting = settingsBySlug.get(slug) ?? defaults.find((s) => s.slug === slug)!;
       const stored = raw.items.filter((item) => item.categorySlug === slug);
@@ -275,8 +357,10 @@ export async function getCategoryOverview(): Promise<{
         slug,
         name: base.name,
         short: base.short,
+        icon: slug,
         adminFee: setting.adminFee,
         isActive: setting.isActive,
+        isCustom: false,
         itemCount: mainItems.length,
         activeItemCount: activePrices.length,
         startingPrice: activePrices.length ? Math.min(...activePrices) : 0,
@@ -284,7 +368,26 @@ export async function getCategoryOverview(): Promise<{
       } satisfies CategoryOverview;
     });
 
-    return { overview, error: null };
+    const customOverview = customDefs.map((def) => {
+      const activePrices = def.items
+        .filter((item) => item.isActive)
+        .map((item) => item.price);
+      return {
+        slug: def.slug,
+        name: def.name,
+        short: def.short,
+        icon: def.icon,
+        adminFee: def.admin,
+        isActive: def.isActive,
+        isCustom: true,
+        itemCount: def.items.length,
+        activeItemCount: activePrices.length,
+        startingPrice: activePrices.length ? Math.min(...activePrices) : 0,
+        hasAltVariant: false,
+      } satisfies CategoryOverview;
+    });
+
+    return { overview: [...codeOverview, ...customOverview], error: null };
   } catch (error) {
     return {
       overview: [],
@@ -383,4 +486,81 @@ export async function resetCatalog(): Promise<void> {
     settings: [],
     items: [],
   } satisfies CatalogFile);
+}
+
+/* ------------------------------------------------------------------ */
+/* Kategori custom — CRUD di site_content                              */
+/* ------------------------------------------------------------------ */
+
+export interface CustomCategoryIdentity {
+  name: string;
+  short: string;
+  tint: string;
+  icon: string;
+  fieldType?: "tel" | "text";
+}
+
+export async function createCustomCategory(def: CustomCategory): Promise<void> {
+  const { content } = await getContentSnapshot();
+  await saveSiteContent({
+    ...content,
+    customCategories: [...(content.customCategories ?? []), def],
+  });
+}
+
+export async function updateCustomCategory(
+  slug: string,
+  setting: CategorySetting,
+  items: CategoryItemRecord[],
+  identity?: CustomCategoryIdentity,
+): Promise<boolean> {
+  const { content } = await getContentSnapshot();
+  const list = content.customCategories ?? [];
+  const index = list.findIndex((item) => item.slug === slug);
+  if (index === -1) return false;
+  const current = list[index]!;
+
+  const cleanItems: CustomCategoryItem[] = items
+    .filter((item) => item.variant === "main" && item.label.trim().length > 0)
+    .map((item) => ({
+      label: item.label,
+      note: item.note,
+      price: item.price,
+      isActive: item.isActive,
+    }));
+
+  const next: CustomCategory = {
+    ...current,
+    admin: setting.adminFee,
+    nomLabel: setting.nomLabel,
+    field: {
+      label: setting.fieldLabel,
+      placeholder: setting.fieldPlaceholder,
+      type: identity?.fieldType ?? current.field.type,
+      hint: setting.fieldHint,
+      minLength: setting.fieldMinLength,
+    },
+    isActive: setting.isActive,
+    items: cleanItems,
+    ...(identity
+      ? { name: identity.name, short: identity.short, tint: identity.tint, icon: identity.icon }
+      : {}),
+  };
+
+  await saveSiteContent({
+    ...content,
+    customCategories: list.map((item, i) => (i === index ? next : item)),
+  });
+  return true;
+}
+
+export async function deleteCustomCategory(slug: string): Promise<boolean> {
+  const { content } = await getContentSnapshot();
+  const list = content.customCategories ?? [];
+  if (!list.some((item) => item.slug === slug)) return false;
+  await saveSiteContent({
+    ...content,
+    customCategories: list.filter((item) => item.slug !== slug),
+  });
+  return true;
 }

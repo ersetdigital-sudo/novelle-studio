@@ -15,7 +15,7 @@ import { ProviderChips } from "@/components/transaction/ProviderChips";
 
 export function ProductPicker({ category }: { category: ResolvedCategory }) {
   const router = useRouter();
-  const { state, hydrated, selectCategory, selectProvider, selectItem, setNumber, createOrder } =
+  const { state, hydrated, selectCategory, ensureCategory, selectProvider, selectItem, setNumber, createOrder } =
     useTransaction();
   const [error, setError] = useState("");
 
@@ -23,10 +23,13 @@ export function ProductPicker({ category }: { category: ResolvedCategory }) {
 
   // Kalau kategori yang dibuka berbeda dari state, reset pilihan.
   useEffect(() => {
+    if (!hydrated) return;
     if (state.category !== category.slug) {
-      selectCategory(category.slug);
+      selectCategory(category);
+    } else if (!state.categoryData) {
+      ensureCategory(category);
     }
-  }, [state.category, category.slug, selectCategory]);
+  }, [hydrated, state.category, state.categoryData, category, selectCategory, ensureCategory]);
 
   const isNumberValid = state.number.length >= category.field.minLength;
   const canContinue = Boolean(state.item) && isNumberValid;
@@ -50,7 +53,7 @@ export function ProductPicker({ category }: { category: ResolvedCategory }) {
         <div className="panel">
           <div className="panel-head flex items-center gap-3.5">
             <span className="ic" style={{ background: category.tint }}>
-              <CategoryIcon slug={category.slug} />
+              <CategoryIcon slug={category.slug} icon={category.icon} />
             </span>
             <div>
               <h2>{category.name}</h2>

@@ -99,6 +99,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     subtitle: "",
     items: faqs.map((item) => ({ ...item })),
   },
+  customCategories: [],
 };
 
 /** Pengaturan operasional per kategori dari data/catalog.ts. */
@@ -157,6 +158,7 @@ export function defaultCategoryItems(): CategoryItemRecord[] {
 }
 
 /** Kategori yang punya daftar nominal alternatif (mis. PLN pascabayar). */
-export function hasAltVariant(slug: CategorySlug): boolean {
-  return Boolean(catalog[slug].altItems?.length);
+export function hasAltVariant(slug: string): boolean {
+  if (!Object.prototype.hasOwnProperty.call(catalog, slug)) return false;
+  return Boolean(catalog[slug as CategorySlug].altItems?.length);
 }

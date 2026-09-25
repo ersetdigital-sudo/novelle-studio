@@ -11,11 +11,16 @@ export default async function AdminCatalogPage() {
 
   return (
     <>
-      <header className="mb-5">
-        <h1 className="font-display text-2xl font-extrabold">Katalog &amp; Harga</h1>
-        <p className="mt-1 text-sm text-muted">
-          Pilih kategori untuk mengatur nominal, harga, dan biaya adminnya.
-        </p>
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-extrabold">Katalog &amp; Harga</h1>
+          <p className="mt-1 text-sm text-muted">
+            Pilih kategori untuk mengatur nominal, harga, dan biaya adminnya.
+          </p>
+        </div>
+        <Link href="/admin/katalog/baru" className="btn btn-orange px-4 py-2 text-sm">
+          + Tambah Kategori
+        </Link>
       </header>
 
       {error && (
@@ -30,7 +35,12 @@ export default async function AdminCatalogPage() {
             <Card
               title={item.name}
               description={item.short}
-              action={item.isActive ? <Badge tone="ok">aktif</Badge> : <Badge tone="off">disembunyikan</Badge>}
+              action={
+                <span className="flex items-center gap-1.5">
+                  {item.isCustom && <Badge tone="neutral">custom</Badge>}
+                  {item.isActive ? <Badge tone="ok">aktif</Badge> : <Badge tone="off">disembunyikan</Badge>}
+                </span>
+              }
             >
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted">
                 <span>

@@ -13,15 +13,18 @@ import {
   recordFailedAttempt,
   startSession,
 } from "@/lib/admin/auth";
-import { CATALOG_TAG, resetCatalog, saveCategory } from "@/lib/store/catalog";
+import { CATALOG_TAG, createCustomCategory, customSetting, deleteCustomCategory, getCustomCategories, resetCatalog, saveCategory, updateCustomCategory, DEFAULT_CUSTOM_ICON, DEFAULT_CUSTOM_TINT } from "@/lib/store/catalog";
 import { defaultCategorySettings } from "@/lib/store/defaults";
 import { CONTENT_KEYS, CONTENT_TAG, deepMerge, getContentSnapshot, resetSiteContent, saveSiteContent } from "@/lib/store/content";
 import { PAYMENTS_TAG, isPaymentMethodReady, resetPaymentMethods, savePaymentMethods } from "@/lib/store/payments";
 import { ORDERS_TAG, isOrderStatus, resetOrders, updateOrderStatus } from "@/lib/store/orders";
+import { CATEGORY_ICON_KEYS } from "@/lib/icons";
 import type {
   ActionResult,
+  CategoryField,
   CategoryItemRecord,
   CategorySetting,
+  CustomCategory,
   PaymentMethod,
   PaymentType,
   SiteContent,
@@ -159,13 +162,21 @@ function normalizeItem(
 export async function saveCategoryAction(input: {
   setting: unknown;
   items: unknown;
+  identity?: unknown;
 }): Promise<ActionResult> {
   const denied = await guard();
   if (denied) return denied;
 
   const requestedSlug = (isPlainObject(input.setting) ? text(input.setting.slug) : "") as CategorySetting["slug"];
-  const base = defaultCategorySettings().find((item) => item.slug === requestedSlug);
-  if (!base) return { ok: false, message: "Kategori tidak dikenal." };
+  const codeBase = defaultCategorySettings().find((item) => item.slug === requestedSlug);
+  let base = codeBase;
+  let customDef: CustomCategory | null = null;
+
+  if (!base) {
+    customDef = (await getCustomCategories()).find((item) => item.slug === requestedSlug) ?? null;
+    if (!customDef) return { ok: false, message: "Kategori tidak dikenal." };
+    base = customSetting(customDef);
+  }
 
   const setting = normalizeSetting(input.setting, base);
   const items = (Array.isArray(input.items) ? input.items : [])
@@ -173,8 +184,28 @@ export async function saveCategoryAction(input: {
     .filter((item): item is CategoryItemRecord => item !== null);
 
   try {
-    await saveCategory(setting, items);
-    refreshPublic({ catalog: true });
+    if (customDef) {
+      const rawIdentity = isPlainObject(input.identity) ? input.identity : null;
+      let identity;
+      if (rawIdentity) {
+        const fieldType = rawIdentity.fieldType === "text" ? ("text" as const) : ("tel" as const);
+        const tint = text(rawIdentity.tint, customDef.tint);
+        const icon = text(rawIdentity.icon, customDef.icon);
+        identity = {
+          name: text(rawIdentity.name, customDef.name).trim() || customDef.name,
+          short: text(rawIdentity.short, customDef.short).trim() || customDef.short,
+          tint: /^#[0-9a-fA-F]{6}$/.test(tint) ? tint : customDef.tint,
+          icon: (CATEGORY_ICON_KEYS as readonly string[]).includes(icon) ? icon : customDef.icon,
+          fieldType,
+        };
+      }
+      const saved = await updateCustomCategory(setting.slug, setting, items, identity);
+      if (!saved) return { ok: false, message: "Kategori tidak ditemukan." };
+      refreshPublic({ catalog: true, content: true });
+    } else {
+      await saveCategory(setting, items);
+      refreshPublic({ catalog: true });
+    }
     revalidatePath("/admin/katalog");
     revalidatePath(`/admin/katalog/${setting.slug}`);
     return { ok: true, message: "Kategori tersimpan." };
@@ -182,6 +213,112 @@ export async function saveCategoryAction(input: {
     return {
       ok: false,
       message: error instanceof Error ? error.message : "Gagal menyimpan kategori.",
+    };
+  }
+}
+
+function slugify(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "kategori"
+  );
+}
+
+async function uniqueSlug(base: string): Promise<string> {
+  const taken = new Set([
+    ...defaultCategorySettings().map((item) => item.slug),
+    ...(await getCustomCategories()).map((item) => item.slug),
+  ]);
+  if (!taken.has(base)) return base;
+  for (let suffix = 2; suffix < 100; suffix += 1) {
+    const candidate = `${base}-${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${base}-${Date.now()}`;
+}
+
+export async function createCategoryAction(input: {
+  name?: unknown;
+  short?: unknown;
+  tint?: unknown;
+  icon?: unknown;
+  admin?: unknown;
+  nomLabel?: unknown;
+  fieldLabel?: unknown;
+  fieldPlaceholder?: unknown;
+  fieldHint?: unknown;
+  fieldMinLength?: unknown;
+  fieldType?: unknown;
+}): Promise<ActionResult & { slug?: string }> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const name = text(input.name).trim();
+  if (!name) return { ok: false, message: "Nama kategori wajib diisi." };
+
+  const tint = text(input.tint, DEFAULT_CUSTOM_TINT);
+  const icon = text(input.icon, DEFAULT_CUSTOM_ICON);
+
+  const field: CategoryField = {
+    label: text(input.fieldLabel).trim() || "Nomor Tujuan",
+    placeholder: text(input.fieldPlaceholder).trim() || "Masukkan nomor tujuan",
+    type: input.fieldType === "text" ? "text" : "tel",
+    hint: text(input.fieldHint).trim(),
+    minLength: Math.max(1, int(input.fieldMinLength, 6)),
+  };
+
+  const def: CustomCategory = {
+    slug: await uniqueSlug(slugify(name)),
+    name,
+    short: text(input.short).trim() || name,
+    tint: /^#[0-9a-fA-F]{6}$/.test(tint) ? tint : DEFAULT_CUSTOM_TINT,
+    icon: (CATEGORY_ICON_KEYS as readonly string[]).includes(icon) ? icon : DEFAULT_CUSTOM_ICON,
+    admin: Math.max(0, int(input.admin, 0)),
+    nomLabel: text(input.nomLabel).trim() || "Pilih Nominal",
+    field,
+    isActive: true,
+    items: [],
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    await createCustomCategory(def);
+    refreshPublic({ catalog: true, content: true });
+    revalidatePath("/admin/katalog");
+    return {
+      ok: true,
+      message: "Kategori dibuat. Sekarang tambahkan nominal dan harganya.",
+      slug: def.slug,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "Gagal membuat kategori.",
+    };
+  }
+}
+
+export async function deleteCustomCategoryAction(slug: string): Promise<ActionResult> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  const clean = slug.trim();
+  if (defaultCategorySettings().some((item) => item.slug === clean)) {
+    return { ok: false, message: "Kategori bawaan tidak bisa dihapus, hanya bisa disembunyikan." };
+  }
+
+  try {
+    const removed = await deleteCustomCategory(clean);
+    if (!removed) return { ok: false, message: "Kategori tidak ditemukan." };
+    refreshPublic({ catalog: true, content: true });
+    revalidatePath("/admin/katalog");
+    return { ok: true, message: "Kategori dihapus." };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "Gagal menghapus kategori.",
     };
   }
 }

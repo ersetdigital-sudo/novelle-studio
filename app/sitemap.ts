@@ -2,10 +2,14 @@ import type { MetadataRoute } from "next";
 
 import { site } from "@/data/site";
 import { categorySlugs } from "@/lib/catalog";
+import { getCustomCategories } from "@/lib/store/catalog";
 
 /** sitemap.xml dibuat otomatis: beranda + semua kategori + halaman cek transaksi. */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
+  const customSlugs = (await getCustomCategories())
+    .filter((category) => category.isActive)
+    .map((category) => category.slug);
 
   return [
     {
@@ -14,7 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
-    ...categorySlugs.map((slug) => ({
+    ...[...categorySlugs, ...customSlugs].map((slug) => ({
       url: `${site.url}/produk/${slug}`,
       lastModified,
       changeFrequency: "weekly" as const,

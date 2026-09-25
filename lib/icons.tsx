@@ -1,110 +1,187 @@
-import type { CategorySlug } from "@/lib/types";
-
 type IconProps = { className?: string };
 
-/** Ikon kategori — warna mengikuti tint masing-masing kategori di data/catalog.ts. */
+const common = { width: 26, height: 26, viewBox: "0 0 24 24", fill: "none" };
+
+type IconRenderer = (className?: string) => React.JSX.Element;
+
+const ICONS: Record<string, IconRenderer> = {
+  pulsa: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <rect x="6" y="2" width="12" height="20" rx="3" fill="#0FB9A8" />
+      <rect x="8" y="5" width="8" height="12" rx="1.5" fill="#fff" />
+      <circle cx="12" cy="19.3" r="1.1" fill="#fff" />
+    </svg>
+  ),
+  pln: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#FF7A2F" />
+    </svg>
+  ),
+  data: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <path
+        d="M2 8.5a14 14 0 0120 0"
+        stroke="#2F3E9E"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M5.5 12.5a9 9 0 0113 0"
+        stroke="#2F3E9E"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="18" r="2.4" fill="#2F3E9E" />
+    </svg>
+  ),
+  pdam: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <path
+        d="M12 3s6 6.6 6 10.4A6 6 0 116 13.4C6 9.6 12 3 12 3z"
+        fill="#22A6E8"
+      />
+    </svg>
+  ),
+  bpjs: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <path
+        d="M12 3l8 3v6c0 5-3.4 9.2-8 11-4.6-1.8-8-6-8-11V6l8-3z"
+        fill="#17A673"
+      />
+      <path
+        d="M12 8.5v7M8.5 12h7"
+        stroke="#fff"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+    </svg>
+  ),
+  internet: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="#7B4DDB" strokeWidth="2.2" />
+      <path
+        d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"
+        stroke="#7B4DDB"
+        strokeWidth="2.2"
+      />
+    </svg>
+  ),
+  emoney: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <rect
+        x="2.5"
+        y="5.5"
+        width="19"
+        height="13"
+        rx="3.4"
+        fill="#E8A80C"
+      />
+      <path d="M2.5 10h19" stroke="#fff" strokeWidth="2.2" />
+      <circle cx="17.5" cy="14.5" r="1.7" fill="#fff" />
+    </svg>
+  ),
+  multifinance: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <rect x="3" y="9" width="18" height="11" rx="3" fill="#E8553F" />
+      <path
+        d="M7 9V7a5 5 0 0110 0v2"
+        stroke="#E8553F"
+        strokeWidth="2.3"
+      />
+      <circle cx="12" cy="14.5" r="1.8" fill="#fff" />
+    </svg>
+  ),
+  game: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <rect x="2" y="7.5" width="20" height="11" rx="5" fill="#7B4DDB" />
+      <path
+        d="M7 10.5v5M4.5 13h5"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <circle cx="16" cy="11.6" r="1.3" fill="#fff" />
+      <circle cx="18.4" cy="14.2" r="1.3" fill="#fff" />
+    </svg>
+  ),
+  wallet: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <rect x="2.5" y="5.5" width="19" height="13.5" rx="3.2" fill="#2F6BFF" />
+      <path
+        d="M6 5.5V4.8A1.8 1.8 0 017.8 3h8.4A1.8 1.8 0 0118 4.8v.7"
+        stroke="#2F6BFF"
+        strokeWidth="2.2"
+      />
+      <rect x="13" y="10" width="6.5" height="4.5" rx="1.6" fill="#fff" />
+    </svg>
+  ),
+  voucher: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <rect x="2.5" y="6" width="19" height="12" rx="2.6" fill="#E8A80C" />
+      <path
+        d="M14.5 6v12"
+        stroke="#fff"
+        strokeWidth="2"
+        strokeDasharray="2.6 2.6"
+      />
+      <circle cx="8.6" cy="12" r="2.5" fill="#fff" />
+    </svg>
+  ),
+  stream: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9.5" fill="#E8553F" />
+      <path d="M10 8.4l6 3.6-6 3.6V8.4z" fill="#fff" />
+    </svg>
+  ),
+  insurance: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <path
+        d="M12 2.5l8 3v6.2c0 4.8-3.3 8.8-8 10.8-4.7-2-8-6-8-10.8V5.5l8-3z"
+        stroke="#22A6E8"
+        strokeWidth="2.2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.6 12.2l2.6 2.6 4.4-5"
+        stroke="#22A6E8"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  box: (className) => (
+    <svg {...common} className={className} aria-hidden="true">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="#5C7B77" />
+      <circle cx="12" cy="12" r="3.4" fill="#fff" />
+    </svg>
+  ),
+};
+
+export const CATEGORY_ICON_KEYS = [
+  "game",
+  "wallet",
+  "voucher",
+  "stream",
+  "insurance",
+  "box",
+  "pulsa",
+  "pln",
+  "data",
+  "pdam",
+  "bpjs",
+  "internet",
+  "emoney",
+  "multifinance",
+] as const;
+
 export function CategoryIcon({
   slug,
+  icon,
   className,
-}: IconProps & { slug: CategorySlug }) {
-  const common = { width: 26, height: 26, viewBox: "0 0 24 24", fill: "none" };
-
-  switch (slug) {
-    case "pulsa":
-      return (
-        <svg {...common} className={className} aria-hidden="true">
-          <rect x="6" y="2" width="12" height="20" rx="3" fill="#0FB9A8" />
-          <rect x="8" y="5" width="8" height="12" rx="1.5" fill="#fff" />
-          <circle cx="12" cy="19.3" r="1.1" fill="#fff" />
-        </svg>
-      );
-    case "pln":
-      return (
-        <svg {...common} className={className} aria-hidden="true">
-          <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#FF7A2F" />
-        </svg>
-      );
-    case "data":
-      return (
-        <svg {...common} className={className} aria-hidden="true">
-          <path
-            d="M2 8.5a14 14 0 0120 0"
-            stroke="#2F3E9E"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          />
-          <path
-            d="M5.5 12.5a9 9 0 0113 0"
-            stroke="#2F3E9E"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          />
-          <circle cx="12" cy="18" r="2.4" fill="#2F3E9E" />
-        </svg>
-      );
-    case "pdam":
-      return (
-        <svg {...common} className={className} aria-hidden="true">
-          <path
-            d="M12 3s6 6.6 6 10.4A6 6 0 116 13.4C6 9.6 12 3 12 3z"
-            fill="#22A6E8"
-          />
-        </svg>
-      );
-    case "bpjs":
-      return (
-        <svg {...common} className={className} aria-hidden="true">
-          <path
-            d="M12 3l8 3v6c0 5-3.4 9.2-8 11-4.6-1.8-8-6-8-11V6l8-3z"
-            fill="#17A673"
-          />
-          <path
-            d="M12 8.5v7M8.5 12h7"
-            stroke="#fff"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case "internet":
-      return (
-        <svg {...common} className={className} aria-hidden="true">
-          <circle cx="12" cy="12" r="9" stroke="#7B4DDB" strokeWidth="2.2" />
-          <path
-            d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"
-            stroke="#7B4DDB"
-            strokeWidth="2.2"
-          />
-        </svg>
-      );
-    case "emoney":
-      return (
-        <svg {...common} className={className} aria-hidden="true">
-          <rect
-            x="2.5"
-            y="5.5"
-            width="19"
-            height="13"
-            rx="3.4"
-            fill="#E8A80C"
-          />
-          <path d="M2.5 10h19" stroke="#fff" strokeWidth="2.2" />
-          <circle cx="17.5" cy="14.5" r="1.7" fill="#fff" />
-        </svg>
-      );
-    case "multifinance":
-      return (
-        <svg {...common} className={className} aria-hidden="true">
-          <rect x="3" y="9" width="18" height="11" rx="3" fill="#E8553F" />
-          <path
-            d="M7 9V7a5 5 0 0110 0v2"
-            stroke="#E8553F"
-            strokeWidth="2.3"
-          />
-          <circle cx="12" cy="14.5" r="1.8" fill="#fff" />
-        </svg>
-      );
-  }
+}: IconProps & { slug: string; icon?: string }) {
+  const render = ICONS[icon ?? slug];
+  return render ? render(className) : ICONS.box!(className);
 }
 
 export function BoltIcon({ className }: IconProps) {

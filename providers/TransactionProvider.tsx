@@ -13,17 +13,13 @@ import {
 
 import { formatCategoryLabel, getCategory, getNominalItems } from "@/lib/catalog";
 import { createToken, createTransactionId, saveTransaction } from "@/lib/history";
-import type {
-  Category,
-  CategorySlug,
-  NominalItem,
-  TransactionState,
-} from "@/lib/types";
+import type { Category, NominalItem, TransactionState } from "@/lib/types";
 
 const STORAGE_KEY = "novelle_tx_state_v1";
 
 const EMPTY_STATE: TransactionState = {
   category: null,
+  categoryData: null,
   provider: null,
   item: null,
   number: "",
@@ -35,6 +31,12 @@ const EMPTY_STATE: TransactionState = {
   token: "",
 };
 
+/** Kategori dari snapshot (aman untuk kategori custom) dengan fallback ke data statis. */
+function resolveCategory(state: TransactionState): Category | null {
+  if (state.categoryData) return state.categoryData;
+  return state.category ? getCategory(state.category) ?? null : null;
+}
+
 interface TransactionContextValue {
   state: TransactionState;
   /** true setelah state dibaca dari sessionStorage (hindari mismatch SSR). */
@@ -43,7 +45,9 @@ interface TransactionContextValue {
   items: readonly NominalItem[];
   /** Label panjang kategori + provider, contoh: "PLN — Token Prabayar". */
   label: string;
-  selectCategory: (slug: CategorySlug) => void;
+  selectCategory: (category: Category) => void;
+  /** Isi snapshot kategori tanpa mereset input (dipakai setelah hydrate sessionStorage). */
+  ensureCategory: (category: Category) => void;
   selectProvider: (provider: string) => void;
   selectItem: (item: NominalItem) => void;
   setNumber: (value: string) => void;
@@ -87,15 +91,22 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     }
   }, [state, hydrated]);
 
-  const selectCategory = useCallback((slug: CategorySlug) => {
-    const category = getCategory(slug);
-    if (!category) return;
+  const selectCategory = useCallback((category: Category) => {
     setState({
       ...EMPTY_STATE,
-      category: slug,
+      category: category.slug,
+      categoryData: category,
       provider: category.providers?.list[0] ?? null,
       admin: category.admin,
     });
+  }, []);
+
+  const ensureCategory = useCallback((category: Category) => {
+    setState((prev) =>
+      prev.category === category.slug && prev.categoryData
+        ? prev
+        : { ...prev, category: category.slug, categoryData: category },
+    );
   }, []);
 
   const selectProvider = useCallback((provider: string) => {
@@ -115,9 +126,9 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createOrder = useCallback((): boolean => {
-    const { category, item, number } = stateRef.current;
-    const cat = category ? getCategory(category) : undefined;
-    if (!cat || !item || number.length < cat.field.minLength) return false;
+    const current = stateRef.current;
+    const cat = resolveCategory(current);
+    if (!cat || !current.item || current.number.length < cat.field.minLength) return false;
     setState((prev) => ({
       ...prev,
       trxId: prev.trxId || createTransactionId(),
@@ -131,7 +142,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   const finishPayment = useCallback((): void => {
     const current = stateRef.current;
     if (!current.item || !current.category) return;
-    const category = getCategory(current.category);
+    const category = resolveCategory(current);
     if (!category) return;
 
     const token = current.token || createToken(current.category);
@@ -154,7 +165,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => setState(EMPTY_STATE), []);
 
   const value = useMemo<TransactionContextValue>(() => {
-    const category = state.category ? getCategory(state.category) : null;
+    const category = resolveCategory(state);
     return {
       state,
       hydrated,
@@ -162,6 +173,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       items: category ? getNominalItems(category, state.provider) : [],
       label: category ? formatCategoryLabel(category, state.provider) : "—",
       selectCategory,
+      ensureCategory,
       selectProvider,
       selectItem,
       setNumber,
@@ -173,6 +185,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     state,
     hydrated,
     selectCategory,
+    ensureCategory,
     selectProvider,
     selectItem,
     setNumber,

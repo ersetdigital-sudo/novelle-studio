@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
-import { saveCategoryAction } from "@/app/admin/actions";
-import { Badge, Card, NumberField, TextField, Toggle, inputClass } from "@/components/admin/fields";
+import { deleteCustomCategoryAction, saveCategoryAction } from "@/app/admin/actions";
+import { IconPicker, TintPicker } from "@/components/admin/CategoryAppearance";
+import { Card, NumberField, TextField, Toggle, inputClass, labelClass } from "@/components/admin/fields";
 import { Toast, useToast } from "@/components/admin/Toast";
 import { rupiah } from "@/lib/format";
 import type { CategoryItemRecord, CategorySetting } from "@/lib/types";
@@ -17,19 +19,31 @@ interface DraftItem {
   isActive: boolean;
 }
 
+export interface CategoryIdentity {
+  name: string;
+  short: string;
+  tint: string;
+  icon: string;
+  fieldType: "tel" | "text";
+}
+
 export function CategoryEditor({
   setting: initialSetting,
   items: initialItems,
   hasAlt,
+  identity: initialIdentity,
 }: {
   setting: CategorySetting;
   items: CategoryItemRecord[];
   hasAlt: boolean;
+  identity?: CategoryIdentity;
 }) {
+  const router = useRouter();
   const { toast, show } = useToast();
   const [pending, startTransition] = useTransition();
 
   const [setting, setSetting] = useState<CategorySetting>(initialSetting);
+  const [identity, setIdentityState] = useState<CategoryIdentity | null>(initialIdentity ?? null);
   const [items, setItems] = useState<DraftItem[]>(
     initialItems.map(({ id, variant, label, note, price, isActive }) => ({
       id,
@@ -55,17 +69,68 @@ export function CategoryEditor({
 
   function save() {
     startTransition(async () => {
-      const result = await saveCategoryAction({ setting, items });
+      const result = await saveCategoryAction({ setting, items, identity: identity ?? undefined });
       show(result.message, result.ok ? "ok" : "error");
     });
   }
 
+  function remove() {
+    if (!identity) return;
+    if (!window.confirm(`Hapus kategori "${identity.name}"? Semua nominal di dalamnya ikut terhapus.`)) return;
+    startTransition(async () => {
+      const result = await deleteCustomCategoryAction(setting.slug);
+      show(result.message, result.ok ? "ok" : "error");
+      if (result.ok) router.push("/admin/katalog");
+    });
+  }
+
+  const patchIdentity = (patch: Partial<CategoryIdentity>) =>
+    setIdentityState((prev) => (prev ? { ...prev, ...patch } : prev));
+
   const main = items.filter((item) => item.variant === "main");
   const alt = items.filter((item) => item.variant === "alt");
+  const activePrices = main.filter((item) => item.isActive && item.price > 0).map((item) => item.price);
+  const cheapest = activePrices.length ? Math.min(...activePrices) : 0;
 
   return (
     <div className="space-y-5">
       <Toast toast={toast} />
+
+      {identity && (
+        <Card title="Identitas & tampilan" description="Nama, ikon, dan warna kartu kategori di beranda.">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              label="Nama kategori"
+              value={identity.name}
+              onChange={(name) => patchIdentity({ name })}
+              placeholder="Nama kategori"
+            />
+            <TextField
+              label="Deskripsi singkat"
+              value={identity.short}
+              onChange={(short) => patchIdentity({ short })}
+              placeholder="Tampil di bawah nama pada kartu"
+            />
+            <label className="block">
+              <span className={labelClass}>Jenis input tujuan</span>
+              <select
+                className={inputClass}
+                value={identity.fieldType}
+                onChange={(event) =>
+                  patchIdentity({ fieldType: event.target.value === "text" ? "text" : "tel" })
+                }
+              >
+                <option value="tel">Angka (keyboard nomor)</option>
+                <option value="text">Teks bebas</option>
+              </select>
+            </label>
+          </div>
+          <div className="mt-4 space-y-4 border-t-2 border-dashed border-line pt-4">
+            <IconPicker value={identity.icon} onChange={(icon) => patchIdentity({ icon })} />
+            <TintPicker value={identity.tint} onChange={(tint) => patchIdentity({ tint })} />
+          </div>
+        </Card>
+      )}
 
       <Card title="Pengaturan kategori">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -170,9 +235,18 @@ export function CategoryEditor({
           {pending ? "Menyimpan…" : "Simpan Perubahan"}
         </button>
         <span className="text-[11px] text-muted">
-          Total termurah sekarang:{" "}
-          {rupiah(Math.min(...main.filter((i) => i.isActive && i.price > 0).map((i) => i.price), 0) || 0)}
+          Total termurah sekarang: {rupiah(cheapest)}
         </span>
+        {identity && (
+          <button
+            type="button"
+            className="ml-auto text-xs font-bold text-rose-600 hover:underline disabled:opacity-50"
+            disabled={pending}
+            onClick={remove}
+          >
+            Hapus kategori
+          </button>
+        )}
       </div>
     </div>
   );
@@ -210,16 +284,15 @@ function ItemList({
               onChange={(event) => onPatch(index, { price: Math.max(0, Math.round(Number(event.target.value) || 0)) })}
             />
           </div>
-          <div className="flex items-center gap-2 sm:col-span-2">
+          <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
             <input
               className={`${inputClass} flex-1`}
               value={item.note}
               placeholder="Keterangan singkat (opsional)"
               onChange={(event) => onPatch(index, { note: event.target.value })}
             />
-            {item.isActive ? <Badge tone="ok">aktif</Badge> : <Badge tone="off">nonaktif</Badge>}
             <Toggle
-              label=""
+              label="Tampil"
               checked={item.isActive}
               onChange={(isActive) => onPatch(index, { isActive })}
             />

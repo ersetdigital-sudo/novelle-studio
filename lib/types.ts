@@ -1,4 +1,4 @@
-/** Slug kategori layanan yang tersedia di katalog. */
+/** Slug kategori layanan bawaan yang hardcoded di data/catalog.ts. */
 export type CategorySlug =
   | "pulsa"
   | "pln"
@@ -36,12 +36,14 @@ export interface CategoryProviders {
 }
 
 export interface Category {
-  slug: CategorySlug;
+  slug: string;
   name: string;
   /** Deskripsi singkat untuk kartu kategori. */
   short: string;
   /** Warna tint pastel untuk ikon & kartu. */
   tint: string;
+  /** Kunci ikon di lib/icons.tsx; kategori code memakai slug-nya sendiri. */
+  icon?: string;
   /** Biaya admin dalam rupiah (0 = gratis). */
   admin: number;
   /** Label bagian pilih nominal. */
@@ -121,6 +123,7 @@ export interface SiteContent {
   promos: SectionHeader & { items: Promo[] };
   testimonials: SectionHeader & { items: Testimonial[] };
   faqs: SectionHeader & { items: Faq[] };
+  customCategories: CustomCategory[];
 }
 
 /* ============================================================
@@ -163,7 +166,7 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
 export interface Order {
   id: string;
   invoice: string;
-  categorySlug: CategorySlug;
+  categorySlug: string;
   categoryLabel: string;
   itemLabel: string;
   accountId: string;
@@ -191,7 +194,7 @@ export interface ActionResult {
 
 /** Data operasional per kategori yang bisa diubah admin. */
 export interface CategorySetting {
-  slug: CategorySlug;
+  slug: string;
   adminFee: number;
   nomLabel: string;
   providerLabel: string | null;
@@ -207,7 +210,7 @@ export interface CategorySetting {
 /** Satu baris nominal/paket di tabel category_items. */
 export interface CategoryItemRecord {
   id: string;
-  categorySlug: CategorySlug;
+  categorySlug: string;
   variant: "main" | "alt";
   label: string;
   note: string;
@@ -220,6 +223,31 @@ export interface CategoryItemRecord {
 export interface ResolvedCategory extends Category {
   isActive: boolean;
   settings: CategorySetting;
+}
+
+/* ============================================================
+   Kategori custom (dibuat dari dashboard, disimpan di site_content)
+   ============================================================ */
+
+export interface CustomCategoryItem {
+  label: string;
+  note: string;
+  price: number;
+  isActive: boolean;
+}
+
+export interface CustomCategory {
+  slug: string;
+  name: string;
+  short: string;
+  tint: string;
+  icon: string;
+  admin: number;
+  nomLabel: string;
+  field: CategoryField;
+  isActive: boolean;
+  items: CustomCategoryItem[];
+  createdAt: string;
 }
 
 /** Status transaksi hasil simulasi pembayaran. */
@@ -239,7 +267,9 @@ export interface StoredTransaction {
 
 /** State alur transaksi yang dibagi antar halaman. */
 export interface TransactionState {
-  category: CategorySlug | null;
+  category: string | null;
+  /** Snapshot kategori saat dipilih — menopang slug custom di checkout. */
+  categoryData: Category | null;
   provider: string | null;
   item: NominalItem | null;
   /** Nomor tujuan / ID pelanggan yang diisi user. */

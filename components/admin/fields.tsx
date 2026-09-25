@@ -150,19 +150,34 @@ export function Toggle({
   hint?: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3">
+    <label className="-mx-2 flex cursor-pointer items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-cream/70">
       <input
         type="checkbox"
         className="peer sr-only"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
       />
-      <span className="mt-0.5 grid h-6 w-11 shrink-0 place-items-center rounded-full border-2 border-line bg-white transition-colors peer-checked:border-tosca peer-checked:bg-tosca">
-        <span className="h-4 w-4 translate-x-[-8px] rounded-full bg-muted transition-transform peer-checked:translate-x-[8px] peer-checked:bg-white" />
-      </span>
-      <span>
+      <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold">{label}</span>
-        {hint && <span className="mt-0.5 block text-[11px] text-muted">{hint}</span>}
+        {hint && <span className="mt-0.5 block text-[11px] leading-snug text-muted">{hint}</span>}
+      </span>
+      <span
+        className={`relative h-6 w-11 shrink-0 rounded-full border-2 transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-tosca ${
+          checked ? "border-tosca bg-tosca" : "border-line bg-white"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full transition-transform duration-200 ${
+            checked ? "translate-x-5 bg-white" : "translate-x-0 bg-muted"
+          }`}
+        />
+      </span>
+      <span
+        className={`w-14 shrink-0 text-right text-[11px] font-bold uppercase tracking-wide ${
+          checked ? "text-tosca-dark" : "text-muted"
+        }`}
+      >
+        {checked ? "Aktif" : "Nonaktif"}
       </span>
     </label>
   );

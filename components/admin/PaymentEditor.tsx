@@ -156,7 +156,7 @@ export function PaymentEditor({ methods: initial }: { methods: PaymentMethod[] }
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t-2 border-dashed border-line pt-3">
               <Toggle
-                label="Aktif — tampil di halaman pembayaran"
+                label="Tampil di halaman pembayaran"
                 checked={method.isActive}
                 onChange={(isActive) => patch(index, { isActive })}
               />

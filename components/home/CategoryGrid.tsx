@@ -22,7 +22,7 @@ export function CategoryGrid({ categories }: { categories: readonly CategoryOver
                 aria-hidden="true"
               />
               <span className="cat-ico" style={{ background: "var(--color-tosca-soft)" }}>
-                <CategoryIcon slug={category.slug} />
+                <CategoryIcon slug={category.slug} icon={category.icon} />
               </span>
               <h3 className="text-[17px]">{category.name}</h3>
               <small>
