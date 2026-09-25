@@ -1,0 +1,245 @@
+import type { Category, CategorySlug } from "@/lib/types";
+
+/**
+ * Katalog layanan.
+ * >>> Tambah / ubah produk cukup di file ini — komponen tidak perlu disentuh. <<<
+ */
+export const catalog: Record<CategorySlug, Category> = {
+  pulsa: {
+    slug: "pulsa",
+    name: "Pulsa",
+    short: "Isi ulang semua operator",
+    tint: "#D8F5F0",
+    admin: 0,
+    nomLabel: "Pilih Nominal Pulsa",
+    field: {
+      label: "Nomor Handphone",
+      placeholder: "0812xxxxxxxx",
+      type: "tel",
+      hint: "Telkomsel, Indosat, XL, Tri, Smartfren — operator terdeteksi otomatis.",
+      minLength: 10,
+    },
+    items: [
+      { nama: "Pulsa 5.000", keterangan: "Masa aktif +7 hari", harga: 6500 },
+      { nama: "Pulsa 10.000", keterangan: "Masa aktif +14 hari", harga: 11500 },
+      { nama: "Pulsa 15.000", keterangan: "Masa aktif +20 hari", harga: 16300 },
+      { nama: "Pulsa 25.000", keterangan: "Masa aktif +30 hari", harga: 25800 },
+      { nama: "Pulsa 50.000", keterangan: "Masa aktif +45 hari", harga: 50500 },
+      { nama: "Pulsa 100.000", keterangan: "Masa aktif +60 hari", harga: 99500 },
+    ],
+  },
+  pln: {
+    slug: "pln",
+    name: "PLN",
+    short: "Token listrik & tagihan pascabayar",
+    tint: "#FFE7D6",
+    admin: 2500,
+    nomLabel: "Pilih Nominal Token",
+    providers: {
+      label: "Jenis Layanan",
+      list: ["Token Prabayar", "Tagihan Pascabayar"],
+    },
+    field: {
+      label: "Nomor Meter / ID Pelanggan",
+      placeholder: "Contoh: 14xxxxxxxxxx",
+      type: "tel",
+      hint: "11–12 digit, tertera di kartu atau struk token sebelumnya.",
+      minLength: 10,
+    },
+    items: [
+      { nama: "Token Rp20.000", keterangan: "± 14,5 kWh", harga: 20000 },
+      { nama: "Token Rp50.000", keterangan: "± 36,3 kWh", harga: 50000 },
+      { nama: "Token Rp100.000", keterangan: "± 72,7 kWh", harga: 100000 },
+      { nama: "Token Rp200.000", keterangan: "± 145 kWh", harga: 200000 },
+      { nama: "Token Rp500.000", keterangan: "± 363 kWh", harga: 500000 },
+      { nama: "Token Rp1.000.000", keterangan: "± 727 kWh", harga: 1000000 },
+    ],
+    altProvider: "Tagihan Pascabayar",
+    altItems: [
+      { nama: "Tagihan Berjalan", keterangan: "Periode bulan ini", harga: 187450 },
+      { nama: "Tagihan + Denda", keterangan: "Termasuk keterlambatan", harga: 237450 },
+    ],
+  },
+  data: {
+    slug: "data",
+    name: "Paket Data",
+    short: "Kuota internet semua operator",
+    tint: "#E4E7FB",
+    admin: 0,
+    nomLabel: "Pilih Paket",
+    providers: {
+      label: "Pilih Operator",
+      list: ["Telkomsel", "Indosat", "XL", "Tri", "Smartfren"],
+    },
+    field: {
+      label: "Nomor Handphone",
+      placeholder: "0812xxxxxxxx",
+      type: "tel",
+      hint: "Paket akan aktif otomatis maksimal 5 menit setelah pembayaran.",
+      minLength: 10,
+    },
+    items: [
+      { nama: "1 GB", keterangan: "Berlaku 7 hari", harga: 15000 },
+      { nama: "3 GB", keterangan: "Berlaku 30 hari", harga: 30000 },
+      { nama: "5 GB", keterangan: "Berlaku 30 hari", harga: 45000 },
+      { nama: "10 GB", keterangan: "Berlaku 30 hari", harga: 70000 },
+      { nama: "25 GB", keterangan: "Berlaku 30 hari", harga: 110000 },
+      { nama: "Unlimited", keterangan: "Berlaku 30 hari, FUP 2GB/hari", harga: 145000 },
+    ],
+  },
+  pdam: {
+    slug: "pdam",
+    name: "PDAM",
+    short: "Tagihan air daerah",
+    tint: "#D9F0FC",
+    admin: 2500,
+    nomLabel: "Pilih Tagihan",
+    providers: {
+      label: "Pilih Wilayah",
+      list: [
+        "PDAM Jakarta",
+        "PDAM Bandung",
+        "PDAM Surabaya",
+        "PDAM Semarang",
+        "PDAM Medan",
+      ],
+    },
+    field: {
+      label: "Nomor Pelanggan PDAM",
+      placeholder: "Contoh: 100xxxxxxx",
+      type: "tel",
+      hint: "Nomor pelanggan tertera pada lembar tagihan bulanan.",
+      minLength: 6,
+    },
+    items: [
+      { nama: "Tagihan Bulan Berjalan", keterangan: "Pemakaian 18 m³", harga: 96500 },
+      { nama: "Tagihan + Tunggakan 1 Bulan", keterangan: "2 periode", harga: 189000 },
+      { nama: "Tagihan + Tunggakan 2 Bulan", keterangan: "3 periode", harga: 281500 },
+    ],
+  },
+  bpjs: {
+    slug: "bpjs",
+    name: "BPJS",
+    short: "Kesehatan & Ketenagakerjaan",
+    tint: "#D6F3E8",
+    admin: 2500,
+    nomLabel: "Pilih Kelas & Periode",
+    providers: {
+      label: "Jenis BPJS",
+      list: ["BPJS Kesehatan", "BPJS Ketenagakerjaan"],
+    },
+    field: {
+      label: "Nomor Kartu BPJS",
+      placeholder: "13 digit nomor kartu",
+      type: "tel",
+      hint: "Gunakan nomor kepala keluarga untuk membayar satu keluarga sekaligus.",
+      minLength: 11,
+    },
+    items: [
+      { nama: "Kelas 1 — 1 Bulan", keterangan: "Rp150.000/jiwa", harga: 150000 },
+      { nama: "Kelas 2 — 1 Bulan", keterangan: "Rp100.000/jiwa", harga: 100000 },
+      { nama: "Kelas 3 — 1 Bulan", keterangan: "Rp35.000/jiwa", harga: 35000 },
+      { nama: "Kelas 1 — 3 Bulan", keterangan: "Hemat administrasi", harga: 450000 },
+      { nama: "Kelas 2 — 3 Bulan", keterangan: "Hemat administrasi", harga: 300000 },
+      { nama: "Kelas 3 — 3 Bulan", keterangan: "Hemat administrasi", harga: 105000 },
+    ],
+  },
+  internet: {
+    slug: "internet",
+    name: "Pembayaran Internet",
+    short: "Tagihan WiFi & TV kabel",
+    tint: "#EBE2FB",
+    admin: 3000,
+    nomLabel: "Pilih Paket Tagihan",
+    providers: {
+      label: "Pilih Penyedia",
+      list: ["IndiHome", "First Media", "Biznet", "MyRepublic", "MNC Play"],
+    },
+    field: {
+      label: "Nomor Pelanggan / ID Billing",
+      placeholder: "Contoh: 12xxxxxxxx",
+      type: "tel",
+      hint: "Tercantum di email tagihan atau aplikasi penyedia layanan.",
+      minLength: 6,
+    },
+    items: [
+      { nama: "Paket 20 Mbps", keterangan: "Tagihan bulan berjalan", harga: 275000 },
+      { nama: "Paket 30 Mbps", keterangan: "Tagihan bulan berjalan", harga: 315000 },
+      { nama: "Paket 50 Mbps", keterangan: "Tagihan bulan berjalan", harga: 445000 },
+      { nama: "Paket 100 Mbps", keterangan: "Tagihan bulan berjalan", harga: 625000 },
+    ],
+  },
+  emoney: {
+    slug: "emoney",
+    name: "Uang Elektronik",
+    short: "Top up e-wallet & kartu",
+    tint: "#FFF3CC",
+    admin: 1000,
+    nomLabel: "Pilih Nominal Top Up",
+    providers: {
+      label: "Pilih Dompet Digital",
+      list: ["DANA", "OVO", "GoPay", "ShopeePay", "LinkAja", "e-Money Mandiri"],
+    },
+    field: {
+      label: "Nomor HP Terdaftar",
+      placeholder: "0812xxxxxxxx",
+      type: "tel",
+      hint: "Pastikan nomor sudah terdaftar di aplikasi dompet digital tujuan.",
+      minLength: 10,
+    },
+    items: [
+      { nama: "Top Up Rp20.000", keterangan: "Saldo masuk penuh", harga: 20000 },
+      { nama: "Top Up Rp50.000", keterangan: "Saldo masuk penuh", harga: 50000 },
+      { nama: "Top Up Rp100.000", keterangan: "Saldo masuk penuh", harga: 100000 },
+      { nama: "Top Up Rp200.000", keterangan: "Saldo masuk penuh", harga: 200000 },
+      { nama: "Top Up Rp300.000", keterangan: "Saldo masuk penuh", harga: 300000 },
+      { nama: "Top Up Rp500.000", keterangan: "Saldo masuk penuh", harga: 500000 },
+    ],
+  },
+  multifinance: {
+    slug: "multifinance",
+    name: "Multifinance",
+    short: "Cicilan & angsuran kredit",
+    tint: "#FCE2DD",
+    admin: 3500,
+    nomLabel: "Pilih Angsuran",
+    providers: {
+      label: "Pilih Perusahaan Pembiayaan",
+      list: [
+        "FIF Group",
+        "Adira Finance",
+        "BAF",
+        "Home Credit",
+        "Kredivo",
+        "WOM Finance",
+      ],
+    },
+    field: {
+      label: "Nomor Kontrak / Kartu Angsuran",
+      placeholder: "Contoh: 001xxxxxxxx",
+      type: "tel",
+      hint: "Nomor kontrak tertera di buku angsuran atau aplikasi pembiayaan.",
+      minLength: 6,
+    },
+    items: [
+      { nama: "Angsuran Bulan Berjalan", keterangan: "Jatuh tempo bulan ini", harga: 785000 },
+      { nama: "Angsuran + Denda", keterangan: "Termasuk biaya keterlambatan", harga: 835000 },
+      { nama: "Angsuran 2 Bulan", keterangan: "Sekaligus 2 periode", harga: 1570000 },
+      { nama: "Pelunasan Dipercepat", keterangan: "Sisa pokok + biaya", harga: 4250000 },
+    ],
+  },
+};
+
+/**
+ * Urutan tampil di grid beranda (2 baris x 4 kolom) — sengaja diacak.
+ */
+export const categoryOrder: readonly CategorySlug[] = [
+  "pulsa",
+  "pln",
+  "emoney",
+  "data",
+  "bpjs",
+  "internet",
+  "pdam",
+  "multifinance",
+];
