@@ -10,3 +10,6 @@ content/
 .codegraph/
 .omo/
 .needmcp/
+
+.vercel
+.env*
