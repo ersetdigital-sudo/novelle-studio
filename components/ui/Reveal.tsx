@@ -17,12 +17,12 @@ const OFFSET = 18;
 export function Reveal({ children, className, delay = 0, immediate = false }: RevealProps) {
   const prefersReducedMotion = useReducedMotion();
 
-  // Hormati preferensi aksesibilitas: tanpa animasi sama sekali.
-  if (prefersReducedMotion) {
-    return <div className={className}>{children}</div>;
-  }
-
-  const transition = { duration: 0.5, delay, ease: "easeOut" } as const;
+  // Jangan bedakan markup saat reduced-motion: style SSR (opacity:0) tidak terhapus saat hydration dan konten jadi hilang selamanya.
+  const transition = {
+    duration: prefersReducedMotion ? 0 : 0.5,
+    delay: prefersReducedMotion ? 0 : delay,
+    ease: "easeOut",
+  } as const;
 
   if (immediate) {
     return (
